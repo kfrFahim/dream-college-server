@@ -25,11 +25,31 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    //await client.connect();
+    // await client.connect();
 
 const collegeCollection = client.db("collegeDB").collection("colleges");
 const admissionCollection = client.db("collegeDB").collection("admissions");
 const reviewCollection = client.db("collegeDB").collection("reviews");
+
+// Creating index on two fields
+const indexKeys = { name: 1, subject: 1 }; // Replace field1 and field2 with your actual field names
+// const indexOptions = { name: "titleCategory" }; // Replace index_name with the desired index name
+const result = await collegeCollection.createIndex(indexKeys);
+console.log(result);
+
+
+app.get("/getCollegeByText/:text", async (req, res) => {
+  const text = req.params.text;
+  const result = await collegeCollection
+    .find({
+      $or: [
+        { name: { $regex: text, $options: "i" } },
+        { subject: { $regex: text, $options: "i" } },
+      ],
+    })
+    .toArray();
+  res.send(result);
+});
 
     // Colleges
     app.get("/colleges", async (req, res) => {
@@ -76,7 +96,7 @@ const reviewCollection = client.db("collegeDB").collection("reviews");
 
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
